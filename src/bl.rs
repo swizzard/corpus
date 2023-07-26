@@ -12,7 +12,7 @@ define_layout!(token, BigEndian, {
     line: u64,
     position: u64,
     text: crate::string_ref::NestedView,
-    attributes: [u8; 64]
+    attributes: crate::attributes::TokenAttributes as u128
 });
 
 define_layout!(document, BigEndian, {

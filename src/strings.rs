@@ -77,6 +77,15 @@ where
     }
 }
 
+#[derive(Debug, PartialEq, PartialOrd)]
+struct StringsUpdate {
+    old: (u64, u64),
+    new: (u64, u64),
+}
+
+impl StringsUpdate {}
+// todo: update string_ref::View.{start,end}
+
 pub type CorpusResult<T> = Result<T, CorpusError>;
 
 #[derive(Error, Debug)]
