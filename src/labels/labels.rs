@@ -2,39 +2,39 @@ use binary_layout::LayoutAs;
 use enum_iterator::{all, first, last, Sequence};
 
 #[derive(Debug, PartialEq, PartialOrd)]
-pub struct TokenAttributes(u128);
+pub struct TokenLabels(u128);
 
-impl LayoutAs<u128> for TokenAttributes {
-    fn read(v: u128) -> TokenAttributes {
-        TokenAttributes(v)
+impl LayoutAs<u128> for TokenLabels {
+    fn read(v: u128) -> TokenLabels {
+        TokenLabels(v)
     }
-    fn write(v: TokenAttributes) -> u128 {
+    fn write(v: TokenLabels) -> u128 {
         v.0
     }
 }
 
-pub(crate) trait Attributes {
-    type Attrs;
+pub(crate) trait Labels {
+    type Lbls;
     type Serialized = u128;
-    type Deserialized = Vec<<Self as Attributes>::Attrs>;
+    type Deserialized = Vec<<Self as Labels>::Lbls>;
     type Err = String;
 
     fn deserialize(
         &self,
-        val: <Self as Attributes>::Serialized,
-    ) -> Result<<Self as Attributes>::Deserialized, <Self as Attributes>::Err>;
+        val: <Self as Labels>::Serialized,
+    ) -> Result<<Self as Labels>::Deserialized, <Self as Labels>::Err>;
     fn serialize(
         &self,
-        attrs: <Self as Attributes>::Deserialized,
-    ) -> Result<<Self as Attributes>::Serialized, <Self as Attributes>::Err>;
+        attrs: <Self as Labels>::Deserialized,
+    ) -> Result<<Self as Labels>::Serialized, <Self as Labels>::Err>;
 }
 
-pub(crate) struct SequenceAttributes<L, R> {
+pub(crate) struct SequenceLabels<L, R> {
     _l: std::marker::PhantomData<L>,
     _r: std::marker::PhantomData<R>,
 }
 
-pub(crate) enum SequenceAttributesResult<L, R> {
+pub(crate) enum SequenceLabelsResult<L, R> {
     L(L),
     R(R),
 }
@@ -46,18 +46,18 @@ where
     val.try_into().map_err(|_| err)
 }
 
-impl<L, R> Attributes for SequenceAttributes<L, R>
+impl<L, R> Labels for SequenceLabels<L, R>
 where
-    L: Copy + Attributes + Sequence + TryInto<u128>,
-    R: Copy + Attributes + Sequence + TryInto<u128>,
+    L: Copy + Labels + Sequence + TryInto<u128>,
+    R: Copy + Labels + Sequence + TryInto<u128>,
 {
-    type Attrs = SequenceAttributesResult<L, R>;
-    type Deserialized = Vec<SequenceAttributesResult<L, R>>;
+    type Lbls = SequenceLabelsResult<L, R>;
+    type Deserialized = Vec<SequenceLabelsResult<L, R>>;
 
     fn deserialize(
         &self,
-        val: <Self as Attributes>::Serialized,
-    ) -> Result<<Self as Attributes>::Deserialized, <Self as Attributes>::Err> {
+        val: <Self as Labels>::Serialized,
+    ) -> Result<<Self as Labels>::Deserialized, <Self as Labels>::Err> {
         let llu = {
             if let Some(l) = last::<L>() {
                 cst(l, String::from("invalid attributes"))
@@ -73,7 +73,7 @@ where
             }
         };
         if llu >= rlu {
-            Err(String::from("Attributes cannot overlap"))
+            Err(String::from("Labels cannot overlap"))
         } else {
             let mut li = all::<L>()
                 .map(|p| {
@@ -85,7 +85,7 @@ where
                     }
                 })
                 .flatten()
-                .map(|v| SequenceAttributesResult::L(v));
+                .map(|v| SequenceLabelsResult::L(v));
             let mut ri = all::<R>()
                 .map(|p| {
                     let u: u128 = p.try_into().map_err(|_| String::from("oh no")).unwrap();
@@ -96,13 +96,11 @@ where
                     }
                 })
                 .flatten()
-                .map(|v| SequenceAttributesResult::R(v));
-            Ok(li
-                .chain(ri)
-                .collect::<Vec<SequenceAttributesResult<L, R>>>())
+                .map(|v| SequenceLabelsResult::R(v));
+            Ok(li.chain(ri).collect::<Vec<SequenceLabelsResult<L, R>>>())
         }
     }
-    fn serialize(&self, attrs: Vec<SequenceAttributesResult<L, R>>) -> Result<u128, String> {
+    fn serialize(&self, attrs: Vec<SequenceLabelsResult<L, R>>) -> Result<u128, String> {
         let llu = last::<L>()
             .ok_or(String::from("invalid attributes"))?
             .try_into()
@@ -112,18 +110,18 @@ where
             .try_into()
             .map_err(|_| String::from("invalid attributes"))?;
         if llu >= rlu {
-            Err(String::from("Attributes cannot overlap"))
+            Err(String::from("Labels cannot overlap"))
         } else {
             attrs.iter().fold(
                 Ok(0u128),
-                |acc: Result<u128, String>, attr: &SequenceAttributesResult<L, R>| {
+                |acc: Result<u128, String>, attr: &SequenceLabelsResult<L, R>| {
                     if let Ok(a) = acc {
                         let u: u128 = match attr {
-                            SequenceAttributesResult::L(v) => {
+                            SequenceLabelsResult::L(v) => {
                                 Ok(cst(*v, String::from("invalid attribute"))?)
                                     as Result<u128, String>
                             }
-                            SequenceAttributesResult::R(v) => {
+                            SequenceLabelsResult::R(v) => {
                                 Ok(cst(*v, String::from("invalid attribute"))?)
                                     as Result<u128, String>
                             }

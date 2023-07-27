@@ -1,7 +1,7 @@
 #![feature(associated_type_defaults)]
 #![feature(repr128)]
-pub mod attributes;
 pub(crate) mod bl;
+pub mod labels;
 pub(crate) mod rw;
 pub(crate) mod strings;
 
