@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::str;
-use thiserror::Error;
 
-use crate::bl::*;
+use crate::bl::StringRef;
+use crate::errors::{CorpusError, CorpusResult};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Strings(Vec<u8>);
@@ -22,25 +22,19 @@ impl Strings {
     fn gb(&self, start: usize, end: usize) -> CorpusResult<&[u8]> {
         self.0
             .get(start..=end)
-            .ok_or(CorpusError::StringNotFoundError(start, end))
+            .ok_or(CorpusError::StringNotFoundError(start as u64, end as u64))
     }
-    pub fn get_string<S>(&self, string_ref: &string_ref::View<S>) -> CorpusResult<String>
+    pub fn get_string<S>(&self, string_ref: &StringRef) -> CorpusResult<String>
     where
         S: AsRef<[u8]>,
     {
-        let start = string_ref.start().read().try_into().unwrap();
-        let length: usize = string_ref.length().read().try_into().unwrap();
-        let end = start + length;
-        self.gs(start, end)
+        self.gs(string_ref.start()?, string_ref.end()?)
     }
-    pub(crate) fn get_bytes<S>(&self, string_ref: &string_ref::View<S>) -> CorpusResult<&[u8]>
+    pub(crate) fn get_bytes<S>(&self, string_ref: &StringRef) -> CorpusResult<&[u8]>
     where
         S: AsRef<[u8]>,
     {
-        let start = string_ref.start().read().try_into().unwrap();
-        let length: usize = string_ref.length().read().try_into().unwrap();
-        let end = start + length;
-        self.gb(start, end)
+        self.gb(string_ref.start()?, string_ref.end()?)
     }
     pub fn from_file<P>(f: P) -> CorpusResult<Self>
     where
@@ -68,15 +62,6 @@ impl Strings {
     }
 }
 
-impl<S> Default for token::View<S>
-where
-    S: AsRef<[u8]> + Default,
-{
-    fn default() -> Self {
-        Self::new(S::default())
-    }
-}
-
 #[derive(Debug, PartialEq, PartialOrd)]
 struct StringsUpdate {
     old: (u64, u64),
@@ -85,18 +70,6 @@ struct StringsUpdate {
 
 impl StringsUpdate {}
 // todo: update string_ref::View.{start,end}
-
-pub type CorpusResult<T> = Result<T, CorpusError>;
-
-#[derive(Error, Debug)]
-pub enum CorpusError {
-    #[error("error accessing backing storage")]
-    BackingStorageError(#[from] std::io::Error),
-    #[error("String not found between {0} and {1}")]
-    StringNotFoundError(usize, usize),
-    #[error("Invalid string found between {0} and {1}")]
-    InvalidStringError(usize, usize),
-}
 
 #[cfg(test)]
 mod tests {
