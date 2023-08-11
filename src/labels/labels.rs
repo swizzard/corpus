@@ -75,7 +75,7 @@ where
         if llu >= rlu {
             Err(String::from("Labels cannot overlap"))
         } else {
-            let mut li = all::<L>()
+            let li = all::<L>()
                 .map(|p| {
                     let u: u128 = p.try_into().map_err(|_| String::from("oh no")).unwrap();
                     if val & u == u {
@@ -86,7 +86,7 @@ where
                 })
                 .flatten()
                 .map(|v| SequenceLabelsResult::L(v));
-            let mut ri = all::<R>()
+            let ri = all::<R>()
                 .map(|p| {
                     let u: u128 = p.try_into().map_err(|_| String::from("oh no")).unwrap();
                     if val & u == u {

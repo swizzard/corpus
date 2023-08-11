@@ -1,0 +1,18 @@
+- use [marble](https://docs.rs/marble/latest/marble/https://docs.rs/marble/latest/marble/)
+  -- u64: <data>
+    --- ```rust
+          struct Data { collections: BTreeMap<u64, Collection>, ... }
+      ---- ```
+            entity id = (marbleId as u128) & (entityid as u128)
+                           ^^^ high               ^^^ low
+-           ```
+  
+  
+  
+  ** id = (monotonically-increasing u64) << 2 && (entity type)
+    *** e.g. 1st token id = 1u64 << 2 && 3u64 = 6u64
+      **** good enough? we'll see!
+
+
+
+where strings? `page_id | 0x8000_0000_0000_0000`?
