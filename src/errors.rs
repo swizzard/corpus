@@ -8,6 +8,10 @@ pub enum CorpusError {
     BackingStorageError(#[from] std::io::Error),
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
+    #[error("Error decoding {0}")]
+    DecodingError(String),
+    #[error("Error encoding {0}")]
+    EncodingError(String),
     #[error("Lock error: {0}")]
     LockError(String),
     #[error("{0} id overflow")]
