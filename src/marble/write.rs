@@ -149,25 +149,23 @@ impl CorpusWrite for CorpusState<WriteState> {
                 .or_insert(vec![(obj_id, *obj)]);
         }
         let batch = {
-            let mut batch: Vec<(u64, Option<&[u8]>)> = Vec::with_capacity(objs.len());
+            let mut batch: Vec<(u64, Option<Vec<u8>>)> = Vec::with_capacity(objs.len());
             // lock will be dropped at end of block so getting the write lock later is ok
-            let st = self
-                ._read_lock("Read lock error retrieving pages for updates".to_string())?
-                .borrow();
+            let s = self._read_lock("Read lock error retrieving pages for updates".to_string())?;
+            let st = s.borrow();
             for (page_id, entries) in updates.into_iter() {
                 let page = st.db.read(page_id)?;
                 if let Some(raw) = page {
-                    let page = minicbor::decode::<Page>(raw.deref()).map_err(|_| {
+                    let mut page = minicbor::decode::<Page>(raw.deref()).map_err(|_| {
                         CorpusError::DecodingError(format!("Decoding page {page_id}"))
                     })?;
-                    let mut updated = page.clone();
                     for (id, obj) in entries.iter() {
-                        updated.0.insert(*id, *obj);
+                        page.0.insert(*id, *obj);
                     }
-                    batch.push((page_id, Some(&updated.to_bytes()?)));
+                    batch.push((page_id, Some(page.to_bytes()?)));
                 } else {
                     let entries = entries.into_iter().collect::<BTreeMap<u64, CorpusEntity>>();
-                    batch.push((page_id, Some(&Page(entries).to_bytes()?)));
+                    batch.push((page_id, Some(Page(entries).to_bytes()?)));
                 };
             }
             batch

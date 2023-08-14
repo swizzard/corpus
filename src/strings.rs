@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::str;
 
-use crate::bl::StringRef;
+use crate::entities::StringRef;
 use crate::errors::{CorpusError, CorpusResult};
 
 #[derive(Debug, Default, PartialEq)]
@@ -43,6 +43,9 @@ impl Strings {
         std::fs::read(f)
             .map(|a| Self(a))
             .map_err(|e| CorpusError::BackingStorageError(e))
+    }
+    pub(crate) fn from_bytes(bytes: &[u8]) -> Self {
+        Self(Vec::from(bytes))
     }
     #[cfg(test)]
     pub fn _test_contents(&self) -> &[u8] {

@@ -38,7 +38,7 @@ impl Page {
     pub fn to_bytes(&self) -> CorpusResult<Vec<u8>> {
         let mut v = Vec::with_capacity(self.0.len());
         minicbor::encode::<&Page, &mut Vec<u8>>(self, v.as_mut())
-            .map_err(|_| CorpusError::EncodingError("Page encoding error".to_string()));
+            .map_err(|_| CorpusError::EncodingError("Page encoding error".to_string()))?;
         Ok(v)
     }
 }
