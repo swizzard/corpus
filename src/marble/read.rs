@@ -1,9 +1,9 @@
 use crate::entities;
+use crate::entities::strings::Strings;
 use crate::entities::{id_to_u128, CorpusEntity, Id};
 use crate::env_default;
 use crate::errors::{CorpusError, CorpusResult};
 use crate::marble::{pf, CorpusRead, CorpusState, Page};
-use crate::strings::Strings;
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::{BTreeSet, HashMap};
 use std::env;
@@ -169,7 +169,7 @@ impl CorpusRead for CorpusState<ReadState> {
         }
         for (page_id, oids) in to_find.into_iter() {
             let p = self.load_page(page_id)?;
-            self.cache_page(page_id, &p);
+            self.cache_page(page_id, &p)?;
             for id in oids {
                 if let Some(entity) = p.0.get(&id) {
                     out.push(*entity);

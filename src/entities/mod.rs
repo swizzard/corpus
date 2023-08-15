@@ -7,6 +7,7 @@ pub(crate) mod author;
 pub(crate) mod collection;
 pub(crate) mod document;
 pub(crate) mod string_ref;
+pub(crate) mod strings;
 pub(crate) mod token;
 
 pub use author::Author;

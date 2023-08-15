@@ -5,4 +5,3 @@ pub(crate) mod entities;
 pub(crate) mod errors;
 pub mod labels;
 pub(crate) mod marble;
-pub(crate) mod strings;
