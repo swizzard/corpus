@@ -24,16 +24,10 @@ impl Strings {
             .get(start..=end)
             .ok_or(CorpusError::StringNotFoundError(start as u64, end as u64))
     }
-    pub fn get_string<S>(&self, string_ref: &StringRef) -> CorpusResult<String>
-    where
-        S: AsRef<[u8]>,
-    {
+    pub fn get_string(&self, string_ref: &StringRef) -> CorpusResult<String> {
         self.gs(string_ref.start()?, string_ref.end()?)
     }
-    pub(crate) fn get_bytes<S>(&self, string_ref: &StringRef) -> CorpusResult<&[u8]>
-    where
-        S: AsRef<[u8]>,
-    {
+    pub(crate) fn get_bytes(&self, string_ref: &StringRef) -> CorpusResult<&[u8]> {
         self.gb(string_ref.start()?, string_ref.end()?)
     }
     pub fn from_file<P>(f: P) -> CorpusResult<Self>

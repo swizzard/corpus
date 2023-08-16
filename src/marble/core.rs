@@ -1,4 +1,4 @@
-use crate::entities::{CorpusEntity, Id};
+use crate::entities::{CorpusEntity, HydratedEntity, Id};
 use crate::errors::{CorpusError, CorpusResult};
 use minicbor::{Decode, Encode};
 use std::borrow::Borrow;
@@ -27,6 +27,11 @@ pub(crate) trait CorpusRead {
 
 pub(crate) trait CorpusWrite {
     fn write_objs(&self, objs: impl AsRef<[CorpusEntity]>) -> CorpusResult<()>;
+}
+
+pub(crate) trait CorpusHydrate: CorpusRead {
+    fn hydrate_obj(&self, entity: &CorpusEntity) -> CorpusResult<HydratedEntity>;
+    fn hydrate_objs(&self, entities: &[CorpusEntity]) -> CorpusResult<Vec<HydratedEntity>>;
 }
 
 #[repr(transparent)]

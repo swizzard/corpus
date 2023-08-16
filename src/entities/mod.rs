@@ -1,7 +1,9 @@
 use crate::errors::{CorpusError, CorpusResult};
+use chrono::{DateTime, TimeZone, Utc};
 use minicbor::{Decode, Encode};
 use num;
 use num_derive::FromPrimitive;
+use serde_derive::Serialize;
 
 pub(crate) mod author;
 pub(crate) mod collection;
@@ -62,15 +64,17 @@ impl CorpusEntity {
         let mut b = Vec::with_capacity(self.len());
         match self {
             Self::Author(ref a) => minicbor::encode::<&Author, &mut Vec<u8>>(a, b.as_mut())
-                .map_err(|_| CorpusError::EncodingError(format!("{:?}", self))),
+                .map_err(|_| CorpusError::EncodingError(format!("{:?}", self)))?,
             Self::Collection(ref c) => minicbor::encode::<&Collection, &mut Vec<u8>>(c, b.as_mut())
-                .map_err(|_| CorpusError::EncodingError(format!("{:?}", self))),
+                .map_err(|_| CorpusError::EncodingError(format!("{:?}", self)))?,
             Self::Document(ref d) => minicbor::encode::<&Document, &mut Vec<u8>>(d, b.as_mut())
-                .map_err(|_| CorpusError::EncodingError(format!("{:?}", self))),
-            Self::StringRef(ref s) => minicbor::encode::<&StringRef, &mut Vec<u8>>(s, b.as_mut())
-                .map_err(|_| CorpusError::EncodingError(format!("{:?}", self))),
+                .map_err(|_| CorpusError::EncodingError(format!("{:?}", self)))?,
+            Self::StringRef(ref s) => {
+                minicbor::encode::<&StringRef, &mut Vec<u8>>(s, b.as_mut())
+                    .map_err(|_| CorpusError::EncodingError(format!("{:?}", self)))?
+            }
             Self::Token(ref t) => minicbor::encode::<&Token, &mut Vec<u8>>(t, b.as_mut())
-                .map_err(|_| CorpusError::EncodingError(format!("{:?}", self))),
+                .map_err(|_| CorpusError::EncodingError(format!("{:?}", self)))?,
         };
         Ok(b)
     }
@@ -80,6 +84,29 @@ impl CorpusEntity {
     pub(crate) fn page_id(&self) -> u64 {
         self.obj_id().0
     }
+    pub(crate) fn hydrate(
+        &self,
+        strings: &crate::entities::strings::Strings,
+    ) -> CorpusResult<HydratedEntity> {
+        match self {
+            Self::Author(ref a) => a.hydrate(strings),
+            Self::Collection(ref c) => c.hydrate(strings),
+            Self::Document(ref d) => d.hydrate(strings),
+            Self::Token(ref t) => t.hydrate(strings),
+            Self::StringRef(_) => Err(CorpusError::DecodingError(
+                "Cannot hydrate string_ref".to_string(),
+            )),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(untagged)]
+pub enum HydratedEntity {
+    Author(author::HydratedAuthor),
+    Collection(collection::HydratedCollection),
+    Document(document::HydratedDocument),
+    Token(token::HydratedToken),
 }
 
 #[repr(u64)]
@@ -156,4 +183,12 @@ pub fn split_id(id: Id) -> CorpusResult<(u64, u64)> {
         .map_err(|_| CorpusError::InvalidDataError(format!("{l:?}")))?;
     let l = u64::from_be_bytes(l);
     Ok((h, l))
+}
+
+pub(crate) fn parse_date(date: &u64) -> CorpusResult<DateTime<Utc>> {
+    Utc.timestamp_opt(*date as i64, 0)
+        .earliest()
+        .ok_or(CorpusError::DecodingError(
+            "Invalid collection date".to_string(),
+        ))
 }

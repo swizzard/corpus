@@ -29,6 +29,12 @@ impl StringRef {
             .checked_add(length)
             .ok_or(CorpusError::StringNotFoundError(self.start, self.length))
     }
+    pub(crate) fn hydrate(
+        &self,
+        strings: &crate::entities::strings::Strings,
+    ) -> CorpusResult<String> {
+        strings.get_string(&self)
+    }
 }
 
 impl HasId for StringRef {

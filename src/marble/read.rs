@@ -1,9 +1,9 @@
 use crate::entities;
 use crate::entities::strings::Strings;
-use crate::entities::{id_to_u128, CorpusEntity, Id};
+use crate::entities::{id_to_u128, CorpusEntity, HydratedEntity, Id};
 use crate::env_default;
 use crate::errors::{CorpusError, CorpusResult};
-use crate::marble::{pf, CorpusRead, CorpusState, Page};
+use crate::marble::{pf, CorpusHydrate, CorpusRead, CorpusState, Page};
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::{BTreeSet, HashMap};
 use std::env;
@@ -91,6 +91,21 @@ impl CorpusState<ReadState> {
         this.pages.insert(page_id);
         Ok(())
     }
+    fn page_cached(&self, page_id: u64) -> CorpusResult<bool> {
+        Ok(self
+            ._read_lock("Checking page cache".to_string())?
+            .borrow()
+            .pages
+            .contains(&page_id))
+    }
+    fn entity_from_cache(&self, id: Id) -> CorpusResult<Option<CorpusEntity>> {
+        Ok(self
+            ._read_lock("Accessing read cache".to_string())?
+            .borrow()
+            .cache
+            .get(&id_to_u128(id))
+            .cloned())
+    }
     fn load_strings(&self, strings_page_id: u64) -> CorpusResult<Strings> {
         if let Some(raw) = self
             ._read_lock("loading strings".to_string())?
@@ -111,21 +126,12 @@ impl CorpusState<ReadState> {
             .insert(strings_page_id, strings);
         Ok(())
     }
-    fn entity_from_cache(&self, id: Id) -> CorpusResult<Option<CorpusEntity>> {
+    fn strings_cached(&self, strings_page_id: u64) -> CorpusResult<bool> {
         Ok(self
-            ._read_lock("Accessing read cache".to_string())?
+            ._read_lock("Checking strings cache".to_string())?
             .borrow()
-            .cache
-            .get(&id_to_u128(id))
-            .cloned())
-    }
-    fn page_cached(&self, page_id: u64) -> CorpusResult<bool> {
-        Ok(self
-            ._read_lock("Checking page cache".to_string())?
-            .borrow()
-            .pages
-            .get(&page_id)
-            .is_some())
+            .strings_cache
+            .contains_key(&strings_page_id))
     }
 }
 
@@ -179,5 +185,16 @@ impl CorpusRead for CorpusState<ReadState> {
             }
         }
         Ok(out)
+    }
+}
+
+impl CorpusHydrate for CorpusState<ReadState> {
+    fn hydrate_obj(&self, entity: &CorpusEntity) -> CorpusResult<HydratedEntity> {
+        let page_id = entity.page_id();
+        let strings_page = page_id & 0x8000_0000u64;
+        todo!()
+    }
+    fn hydrate_objs(&self, entities: &[CorpusEntity]) -> CorpusResult<Vec<HydratedEntity>> {
+        todo!()
     }
 }
