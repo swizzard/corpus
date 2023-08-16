@@ -1,4 +1,4 @@
-use crate::entities::CorpusEntity;
+use crate::entities::{CorpusEntity, HydratedEntity};
 use crate::env_default;
 use crate::errors::{CorpusError, CorpusResult};
 use crate::marble::{pf, CorpusState, CorpusWrite, Page};
@@ -138,15 +138,16 @@ impl CorpusState<WriteState> {
 }
 
 impl CorpusWrite for CorpusState<WriteState> {
-    fn write_objs(&self, objs: impl AsRef<[CorpusEntity]>) -> CorpusResult<()> {
+    fn write_objs(&self, objs: impl AsRef<[HydratedEntity]>) -> CorpusResult<()> {
         let objs = objs.as_ref();
-        let mut updates: BTreeMap<u64, Vec<(u64, CorpusEntity)>> = BTreeMap::new();
+        let mut updates: BTreeMap<u64, Vec<(u64, HydratedEntity)>> = BTreeMap::new();
         for obj in objs {
             let (page_id, obj_id) = obj.obj_id();
-            updates
-                .entry(page_id)
-                .and_modify(|entries| entries.push((obj_id, *obj)))
-                .or_insert(vec![(obj_id, *obj)]);
+            todo!()
+            // updates
+            //     .entry(page_id)
+            //     .and_modify(|entries| entries.push((obj_id, *obj)))
+            //     .or_insert(vec![(obj_id, *obj)]);
         }
         let batch = {
             let mut batch: Vec<(u64, Option<Vec<u8>>)> = Vec::with_capacity(objs.len());
@@ -160,12 +161,14 @@ impl CorpusWrite for CorpusState<WriteState> {
                         CorpusError::DecodingError(format!("Decoding page {page_id}"))
                     })?;
                     for (id, obj) in entries.iter() {
-                        page.0.insert(*id, *obj);
+                        // page.0.insert(*id, *obj);
+                        todo!()
                     }
                     batch.push((page_id, Some(page.to_bytes()?)));
                 } else {
-                    let entries = entries.into_iter().collect::<BTreeMap<u64, CorpusEntity>>();
-                    batch.push((page_id, Some(Page(entries).to_bytes()?)));
+                    // let entries = entries.into_iter().collect::<BTreeMap<u64, CorpusEntity>>();
+                    // batch.push((page_id, Some(Page(entries).to_bytes()?)));
+                    todo!()
                 };
             }
             batch

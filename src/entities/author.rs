@@ -47,3 +47,17 @@ pub struct HydratedAuthor {
     name: String,
     notes: String,
 }
+
+impl HasId for HydratedAuthor {
+    fn id(&self) -> u128 {
+        self.id
+    }
+}
+
+impl HasType for HydratedAuthor {
+    fn obj_type(&self) -> ObjType {
+        ObjType::Author
+    }
+}
+
+impl HasObjId for HydratedAuthor {}

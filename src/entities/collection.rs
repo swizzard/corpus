@@ -52,3 +52,17 @@ pub struct HydratedCollection {
     title: String,
     notes: String,
 }
+
+impl HasId for HydratedCollection {
+    fn id(&self) -> u128 {
+        self.id
+    }
+}
+
+impl HasType for HydratedCollection {
+    fn obj_type(&self) -> ObjType {
+        ObjType::Collection
+    }
+}
+
+impl HasObjId for HydratedCollection {}

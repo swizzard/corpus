@@ -41,6 +41,23 @@ impl Strings {
     pub(crate) fn from_bytes(bytes: &[u8]) -> Self {
         Self(Vec::from(bytes))
     }
+    pub(crate) fn get_ref(&self, string: &[u8]) -> Option<StringRef> {
+        let mut start: usize = 0;
+        while start < &self.0.len() - string.len() {
+            let mut length: usize = 0;
+            loop {
+                if self.0[start + length] != string[length] {
+                    break;
+                } else if length == string.len() - 1 {
+                    return Some(StringRef::new(start as u64, length as u64));
+                } else {
+                    length += 1;
+                }
+            }
+            start += 1;
+        }
+        None
+    }
     #[cfg(test)]
     pub fn _test_contents(&self) -> &[u8] {
         self.0.as_slice()
@@ -101,5 +118,14 @@ mod tests {
             Err(CorpusError::InvalidStringError(st, en)) if st == 5 && en == 9 => (),
             Err(e) => panic!("non_utf8 test wrong error {e:?}"),
         }
+    }
+    #[test]
+    fn strings_get_ref() {
+        let s = Strings::_test_from_str("anacondagent");
+        let b = b"con";
+        let expected = StringRef::new(3, 2);
+        let actual = s.get_ref(b).expect("get_ref");
+        assert_eq!(expected, actual);
+        assert_eq!(s.get_bytes(&actual).unwrap(), b);
     }
 }

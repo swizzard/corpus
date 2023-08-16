@@ -3,7 +3,7 @@ use chrono::{DateTime, TimeZone, Utc};
 use minicbor::{Decode, Encode};
 use num;
 use num_derive::FromPrimitive;
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 
 pub(crate) mod author;
 pub(crate) mod collection;
@@ -100,13 +100,24 @@ impl CorpusEntity {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum HydratedEntity {
     Author(author::HydratedAuthor),
     Collection(collection::HydratedCollection),
     Document(document::HydratedDocument),
     Token(token::HydratedToken),
+}
+
+impl HydratedEntity {
+    pub fn obj_id(&self) -> (u64, u64) {
+        match self {
+            Self::Author(ref a) => a.obj_id(),
+            Self::Collection(ref c) => c.obj_id(),
+            Self::Document(ref d) => d.obj_id(),
+            Self::Token(ref t) => t.obj_id(),
+        }
+    }
 }
 
 #[repr(u64)]
@@ -129,7 +140,11 @@ pub(crate) trait HasType {
     fn obj_type(&self) -> ObjType;
 }
 
-pub(crate) trait HasObjId: HasId + HasType {}
+pub(crate) trait HasObjId: HasId + HasType {
+    fn obj_id(&self) -> (u64, u64) {
+        obj_id(self.id(), self.obj_type())
+    }
+}
 
 pub fn u128_id(bytes: &[u8; 16]) -> u128 {
     u128::from_be_bytes(*bytes)
@@ -138,27 +153,13 @@ pub fn u128_id(bytes: &[u8; 16]) -> u128 {
 /// first u64 is marble id
 /// 1st byte of 2nd u64 is obj type
 /// remaining 15 bytes are lowest 15 bytes of obj id
-/// ```
-/// let t = Token {
-///     id: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-///     document_id: [1u8;16],
-///     author_id: [2u8;16],
-///     line: 1,
-///     position: 1,
-///     text: StringRef { start: 0, length: 5 },
-///     labels: [0u8;16]
-///     };
-/// let (oh, ol) = Token.obj_id();
-/// assert_eq!(oh, 0b0000_0000_0000_0000);
-/// assert_eq!(ol, 0b011_0000_0000_0001);
-/// ```
 pub fn obj_id(id: u128, t: ObjType) -> (u64, u64) {
-    let t = t as u64;
+    let t = dbg!(t as u64);
     let bytes = id.to_be_bytes();
     let (h, l) = bytes.split_at(8);
     let h = u64::from_be_bytes(h.try_into().unwrap());
     let l = u64::from_be_bytes(l.try_into().unwrap());
-    let l = l & 0x0111_1111_1111_1111 | t;
+    let l = dbg!(l | t);
     (h, l)
 }
 
@@ -191,4 +192,17 @@ pub(crate) fn parse_date(date: &u64) -> CorpusResult<DateTime<Utc>> {
         .ok_or(CorpusError::DecodingError(
             "Invalid collection date".to_string(),
         ))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_obj_id() {
+        let token_id = 0x0000_0000_0000_0001u128;
+        let obj_type = ObjType::Token;
+        let (oh, ol) = obj_id(token_id, obj_type);
+        assert_eq!(oh, 0x0000_0000_0000_0000);
+        assert_eq!(ol, 0x3000_0000_0000_0001);
+    }
 }

@@ -59,3 +59,17 @@ pub struct HydratedDocument {
     date: DateTime<Utc>,
     title: String,
 }
+
+impl HasId for HydratedDocument {
+    fn id(&self) -> u128 {
+        self.id
+    }
+}
+
+impl HasType for HydratedDocument {
+    fn obj_type(&self) -> ObjType {
+        ObjType::Document
+    }
+}
+
+impl HasObjId for HydratedDocument {}

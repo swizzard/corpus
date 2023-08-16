@@ -5,12 +5,15 @@ use minicbor::{Decode, Encode};
 #[derive(Copy, Clone, Debug, Decode, Encode, Eq, PartialEq)]
 pub struct StringRef {
     #[n(0)]
-    start: u64,
+    pub start: u64,
     #[n(1)]
     length: u64,
 }
 
 impl StringRef {
+    pub fn new(start: u64, length: u64) -> Self {
+        Self { start, length }
+    }
     pub fn start(&self) -> CorpusResult<usize> {
         self.start
             .try_into()
@@ -34,6 +37,13 @@ impl StringRef {
         strings: &crate::entities::strings::Strings,
     ) -> CorpusResult<String> {
         strings.get_string(&self)
+    }
+    pub(crate) fn dehydrate(
+        &self,
+        string: String,
+        strings: &super::strings::Strings,
+    ) -> CorpusResult<Self> {
+        todo!()
     }
 }
 

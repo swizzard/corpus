@@ -65,3 +65,17 @@ pub struct HydratedToken {
     text: String,
     labels: Vec<u8>,
 }
+
+impl HasId for HydratedToken {
+    fn id(&self) -> u128 {
+        self.id
+    }
+}
+
+impl HasType for HydratedToken {
+    fn obj_type(&self) -> ObjType {
+        ObjType::Token
+    }
+}
+
+impl HasObjId for HydratedToken {}
